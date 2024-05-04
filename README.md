@@ -18,6 +18,10 @@
 - It's been quite the journey, and I'm excited to share the leaps I've made in image
   classification.
 
+## Github Link:
+
+- https://github.com/hpuppala26/CMPE_258_Assignment_02
+
 ## Overview
 
 This project applies modern deep learning techniques to classify and diagnose diseases in tomato plants. Utilizing the publicly available "Tomato Diseases" dataset from Kaggle, this repository contains the implementation of various models including ResNet, AlexNet, and VGG, each tailored to recognize different diseases affecting tomato plants.

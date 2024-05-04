@@ -115,29 +115,101 @@ def create_vggmodel1(numclasses, img_shape):
     vgg16.classifier[6] = last_layer
     
 class VGG(nn.Module):
-    def __init__(self, features, output_dim):
-        super().__init__()
-        
-        self.features = features
-        
-        self.avgpool = nn.AdaptiveAvgPool2d(7)
-        
+    def __init__(self, num_classes):
+        super(VGG, self).__init__()
+        # Modify the original VGG architecture by changing layer sizes, adding dropout, and using batch normalization
+        self.features = nn.Sequential(
+            nn.Conv2d(3, 64, kernel_size=3, padding=1),
+            nn.BatchNorm2d(64),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            nn.BatchNorm2d(64),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Dropout(0.3),  # Added dropout for regularization
+
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(128, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Dropout(0.4),  # Increased dropout for deeper layers
+
+            nn.Conv2d(128, 256, kernel_size=3, padding=1),
+            nn.BatchNorm2d(256),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(256, 256, kernel_size=3, padding=1),
+            nn.BatchNorm2d(256),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(256, 256, kernel_size=3, padding=1),
+            nn.BatchNorm2d(256),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Dropout(0.4),
+
+            nn.Conv2d(256, 512, kernel_size=3, padding=1),
+            nn.BatchNorm2d(512),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
+            nn.BatchNorm2d(512),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
+            nn.BatchNorm2d(512),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Dropout(0.5),
+
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
+            nn.BatchNorm2d(512),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
+            nn.BatchNorm2d(512),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
+            nn.BatchNorm2d(512),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Dropout(0.5)
+        )
         self.classifier = nn.Sequential(
             nn.Linear(512 * 7 * 7, 4096),
-            nn.ReLU(inplace = True),
+            nn.ReLU(inplace=True),
             nn.Dropout(0.5),
             nn.Linear(4096, 4096),
-            nn.ReLU(inplace = True),
+            nn.ReLU(inplace=True),
             nn.Dropout(0.5),
-            nn.Linear(4096, output_dim),
+            nn.Linear(4096, num_classes)
         )
 
     def forward(self, x):
         x = self.features(x)
-        x = self.avgpool(x)
-        h = x.view(x.shape[0], -1)
-        x = self.classifier(h)
-        return x, h
+        x = torch.flatten(x, 1)
+        x = self.classifier(x)
+        return x
+    
+def train_vgg_model(model, dataloaders, device, criterion, optimizer, scheduler, num_epochs=20):
+    model = model.to(device)
+    for epoch in range(num_epochs):
+        model.train()  # Set model to training mode
+        for inputs, labels in dataloaders['train']:
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+
+            # zero the parameter gradients
+            optimizer.zero_grad()
+
+            # forward and backward
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+            scheduler.step()
+
+        print(f'Epoch {epoch+1}/{num_epochs} completed.')
+    
+    return model
 
 def create_vggcustommodel(numclasses, img_shape):
     #Each item in the list is either 'M', which denotes a max pooling layer, or an integer, which denotes a convolutional layer with that many filters.
@@ -383,40 +455,87 @@ def create_lenet(numclasses, img_shape):
 
 
 class AlexNet(nn.Module):
-    def __init__(self, output_dim):
-        super().__init__()
-        
+    def __init__(self, num_classes):
+        super(AlexNet, self).__init__()
         self.features = nn.Sequential(
-            nn.Conv2d(3, 64, 3, 2, 1), #in_channels, out_channels, kernel_size, stride, padding
-            nn.MaxPool2d(2), #kernel_size
-            nn.ReLU(inplace = True),
-            nn.Conv2d(64, 192, 3, padding = 1),
-            nn.MaxPool2d(2),
-            nn.ReLU(inplace = True),
-            nn.Conv2d(192, 384, 3, padding = 1),
-            nn.ReLU(inplace = True),
-            nn.Conv2d(384, 256, 3, padding = 1),
-            nn.ReLU(inplace = True),
-            nn.Conv2d(256, 256, 3, padding = 1),
-            nn.MaxPool2d(2),
-            nn.ReLU(inplace = True)
+            nn.Conv2d(3, 64, kernel_size=11, stride=4, padding=2),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.Conv2d(64, 192, kernel_size=5, padding=2),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.Conv2d(192, 384, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(384, 256, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(256, 256, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2),
         )
-        
         self.classifier = nn.Sequential(
-            nn.Dropout(0.5),
-            nn.Linear(256 * 2 * 2, 4096),
-            nn.ReLU(inplace = True),
-            nn.Dropout(0.5),
+            nn.Dropout(),
+            nn.Linear(256 * 6 * 6, 4096),
+            nn.ReLU(inplace=True),
+            nn.Dropout(),
             nn.Linear(4096, 4096),
-            nn.ReLU(inplace = True),
-            nn.Linear(4096, output_dim),
+            nn.ReLU(inplace=True),
+            nn.Linear(4096, num_classes),
         )
 
     def forward(self, x):
         x = self.features(x)
-        h = x.view(x.shape[0], -1)
-        x = self.classifier(h)
-        return x, h
+        x = torch.flatten(x, 1)
+        x = self.classifier(x)
+        return x
+    
+def train_model(model, dataloaders, criterion, optimizer, scheduler, num_epochs=25):
+    for epoch in range(num_epochs):
+        print(f'Epoch {epoch}/{num_epochs - 1}')
+        print('-' * 10)
+
+        # Each epoch has a training and validation phase
+        for phase in ['train', 'val']:
+            if phase == 'train':
+                model.train()  # Set model to training mode
+            else:
+                model.eval()   # Set model to evaluate mode
+
+            running_loss = 0.0
+            running_corrects = 0
+
+            # Iterate over data.
+            for inputs, labels in dataloaders[phase]:
+                inputs = inputs.to(device)
+                labels = labels.to(device)
+
+                # zero the parameter gradients
+                optimizer.zero_grad()
+
+                # forward
+                # track history if only in train
+                with torch.set_grad_enabled(phase == 'train'):
+                    outputs = model(inputs)
+                    _, preds = torch.max(outputs, 1)
+                    loss = criterion(outputs, labels)
+
+                    # backward + optimize only if in training phase
+                    if phase == 'train':
+                        loss.backward()
+                        optimizer.step()
+
+                # statistics
+                running_loss += loss.item() * inputs.size(0)
+                running_corrects += torch.sum(preds == labels.data)
+            if phase == 'train':
+                scheduler.step()
+
+            epoch_loss = running_loss / len(dataloaders[phase].dataset)
+            epoch_acc = running_corrects.double() / len(dataloaders[phase].dataset)
+
+            print(f'{phase} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f}')
+
+    return model
+
 
 def create_AlexNet(numclasses, img_shape):
     #for MNIST dataset

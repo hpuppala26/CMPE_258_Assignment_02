@@ -72,7 +72,7 @@ parser.add_argument('--data_name', type=str, default='imagenet_blurred',
 parser.add_argument('--data_type', default='trainonly', choices=['trainonly','trainvalfolder', 'traintestfolder', 'torchvisiondataset'],
                     help='the type of data') 
 parser.add_argument('--data_path', type=str, default="/data/cmpe249-fa23/ImageClassData",
-                    help='path to get data') #/Developer/MyRepo/ImageClassificationData; r"E:\Dataset\ImageNet\tiny-imagenet-200"
+                    help='path to get data') #I will give data_path argument when I am running in HPC. Since, I am using HPC for running all my changes.
 parser.add_argument('--img_height', type=int, default=224,
                     help='resize to img height, 224')
 parser.add_argument('--img_width', type=int, default=224,
